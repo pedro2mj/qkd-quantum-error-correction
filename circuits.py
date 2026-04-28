@@ -43,7 +43,7 @@ def generate_bell_pairs(qc, n_pairs, start_index=0, flipped_qubit = None):
                 qc.z(i+1)
 
 
-def add_CNOT_syndrom_gates(qc, n_exchanged_pairs, n_pure_pairs, hash_matrix):
+def add_CNOT_syndrome_gates(qc, n_exchanged_pairs, n_pure_pairs, hash_matrix):
 
     for col in range(n_exchanged_pairs):
         for row in range(n_pure_pairs):
@@ -78,23 +78,24 @@ def generate_qec_circuit(n_exchanged_pairs, flipped_qubit=None):
     # Parity check for bit flip error correction
     H = generate_hash_matrix(n_exchanged_pairs)
 
-    add_CNOT_syndrom_gates(qc, n_exchanged_pairs, n_pure_pairs, H)
+    add_CNOT_syndrome_gates(qc, n_exchanged_pairs, n_pure_pairs, H)
 
     qc.barrier()
 
-    # parity = []
-    # # Check parity of the ancilla qubits to detect bit flip errors
-    # for i in range(n_pure_pairs):
+    # Check parity of the ancilla qubits to detect bit flip errors
+    error_corrected = False
+    for i in range(n_pure_pairs):
 
-    #     qc.measure(2 + i*4, qc.clbits[i])
-    #     parity_qubit = expr.lift(qc.clbits[i])
+        qc.measure(n_exchanged_qubits + 2*i, qc.clbits[i])
+        parity = expr.lift(qc.clbits[i])
 
-    #     qc.measure(2 + i*4 + 1, qc.clbits[i])
-    #     parity_qubit = expr.bit_xor(qc.clbits[i], parity_qubit)
+        qc.measure(n_exchanged_qubits + 2*i + 1, qc.clbits[i])
+        parity = expr.bit_xor(qc.clbits[i], parity)
         
-    #     parity.append(parity_qubit)
+        with qc.if_test(parity):
+            qc.z(2*i)
 
-    
+
     # for i in range(n_pure_pairs):
     #     with qc.if_test(parity[i]) and qc.if_test(parity[i+1]):
     #          qc.z((i+1)*4+1)
@@ -107,8 +108,8 @@ def generate_qec_circuit(n_exchanged_pairs, flipped_qubit=None):
 
 if __name__ == "__main__":
 
-    n_exchanged_pairs = 4
+    n_exchanged_pairs = 3
     flipped_qubit = None
     qc = generate_qec_circuit(n_exchanged_pairs, flipped_qubit)
-    qc.draw(output='mpl')
+    qc.draw(output='mpl', fold=-1)
     plt.show()
