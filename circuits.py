@@ -38,9 +38,9 @@ def generate_bell_pairs(qc, n_pairs, start_index=0, flipped_qubit = None):
         create_bell_pair(qc, i)
         if flipped_qubit is not None:
             if (i-start_index) == flipped_qubit:
-                qc.z(i)
+                qc.x(i)
             if (i+1-start_index) == flipped_qubit:
-                qc.z(i+1)
+                qc.x(i+1)
 
 
 def add_CNOT_syndrome_gates(qc, n_exchanged_pairs, n_pure_pairs, hash_matrix):
@@ -93,17 +93,9 @@ def generate_qec_circuit(n_exchanged_pairs, flipped_qubit=None):
         parity = expr.bit_xor(qc.clbits[i], parity)
         
         with qc.if_test(parity):
-            qc.z(2*i)
+            qc.x(2*i)
 
-
-    # for i in range(n_pure_pairs):
-    #     with qc.if_test(parity[i]) and qc.if_test(parity[i+1]):
-    #          qc.z((i+1)*4+1)
-
-    
-    # with qc.if_test(parity[-1]) and not qc.if_test(parity[-2]):
-    #     qc.z(-1)
-
+    # qc.measure_all()
     return qc   
 
 if __name__ == "__main__":
@@ -112,4 +104,25 @@ if __name__ == "__main__":
     flipped_qubit = None
     qc = generate_qec_circuit(n_exchanged_pairs, flipped_qubit)
     qc.draw(output='mpl', fold=-1)
+
+    # from qiskit.quantum_info import SparsePauliOp
+
+    # num_qubit_pairs = qc.num_qubits // 2
+    # operator_strings = ['II'*i +  'ZZ' + 'II'*(num_qubit_pairs-i-1) for i in range(num_qubit_pairs)]
+    # print(operator_strings)
+    # print(len(operator_strings))
+
+    # observables = [SparsePauliOp(operator_string) for operator_string in operator_strings]
+
+    from qiskit_aer import AerSimulator
+
+    sim = AerSimulator()
+
+    job = sim.run(qc, shots=1000)
+    result = job.result()
+
+    counts = result.get_counts()
+    print(counts)
+
+
     plt.show()
