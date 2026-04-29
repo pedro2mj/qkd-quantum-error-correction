@@ -1,6 +1,8 @@
 # bit-error-correction
 
 Implementation in Qiskit of a quantum error correction code via entanglement distillation on a QKD BBM92 protocol as seen on https://arxiv.org/abs/1810.03267 (Apendix A)
+ 
+![alt text](image.png)
 
 It is desinged to detect a single bit flip with the hash matrix in which each column corresponds to the qubit number in binary.
 
@@ -13,5 +15,3 @@ $  H =  \begin{pmatrix}
 \end{pmatrix}
 $
 
- 
-  
