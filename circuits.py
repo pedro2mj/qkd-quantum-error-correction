@@ -62,7 +62,7 @@ def generate_qec_circuit(n_exchanged_pairs, flipped_qubit=None):
     n_ancilla_qubits = n_pure_pairs*2 
     n_total_qubits = n_exchanged_qubits + n_ancilla_qubits
 
-    n_classical_bits = n_pure_pairs
+    n_classical_bits = n_ancilla_qubits
 
     qc = QuantumCircuit(n_total_qubits, n_classical_bits)
     
@@ -84,16 +84,18 @@ def generate_qec_circuit(n_exchanged_pairs, flipped_qubit=None):
 
     # Check parity of the ancilla qubits to detect bit flip errors
     error_corrected = False
-    for i in range(n_pure_pairs):
+    # for i in range(n_pure_pairs):
 
-        qc.measure(n_exchanged_qubits + 2*i, qc.clbits[i])
-        parity = expr.lift(qc.clbits[i])
+    #     qc.measure(n_exchanged_qubits + 2*i, qc.clbits[2*i])
+    #     parity = expr.lift(qc.clbits[2*i])
 
-        qc.measure(n_exchanged_qubits + 2*i + 1, qc.clbits[i])
-        parity = expr.bit_xor(qc.clbits[i], parity)
+    #     qc.measure(n_exchanged_qubits + 2*i + 1, qc.clbits[2*i + 1])
+    #     parity = expr.bit_xor(qc.clbits[2*i + 1], parity)
         
-        with qc.if_test(parity):
-            qc.x(2*i)
+    #     with qc.if_test(parity):
+    #         qc.x(2*i)
+
+    #     qc.barrier()
 
     # qc.measure_all()
     return qc   
