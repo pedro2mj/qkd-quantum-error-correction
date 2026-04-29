@@ -1,4 +1,4 @@
-from qiskit import QuantumCircuit
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.circuit.classical import expr
 import numpy as np
 from auxiliary import generate_hash_matrix
@@ -51,6 +51,21 @@ def add_CNOT_syndrome_gates(qc, n_exchanged_pairs, n_pure_pairs, hash_matrix):
                 qc.cx(col*2, n_exchanged_pairs*2 + row*2)
                 qc.cx(col*2 + 1, n_exchanged_pairs*2 + row*2 + 1)
 
+def add_measurement_gates(qc, cr, sr, n_exchanged_qubits, n_pure_pairs):
+    
+    for i in range(n_pure_pairs):
+
+        qc.measure(n_exchanged_qubits + 2*i, cr[2*i])
+        qc.measure(n_exchanged_qubits + 2*i + 1, cr[2*i + 1])
+        
+        qc.store(sr[i], expr.bit_xor(cr[2*i], cr[2*i + 1]))
+
+
+def correct_errors(qc, sr, n_exchanged_pairs):
+    for i in range(n_exchanged_pairs):
+        with qc.if_test((sr, i+1)):
+            qc.x(i*2)
+
 
 def generate_qec_circuit(n_exchanged_pairs, flipped_qubit=None):
     if n_exchanged_pairs < 3:
@@ -62,9 +77,14 @@ def generate_qec_circuit(n_exchanged_pairs, flipped_qubit=None):
     n_ancilla_qubits = n_pure_pairs*2 
     n_total_qubits = n_exchanged_qubits + n_ancilla_qubits
 
-    n_classical_bits = n_ancilla_qubits
+    n_aux_classical = n_ancilla_qubits
+    syndrome_bits =  n_pure_pairs
 
-    qc = QuantumCircuit(n_total_qubits, n_classical_bits)
+    qr = QuantumRegister(n_total_qubits, name='q')
+    cr = ClassicalRegister(n_aux_classical, name='c')
+    sr = ClassicalRegister(syndrome_bits, name='s')
+
+    qc = QuantumCircuit(qr, cr, sr)
     
     # Create pure bell pairs
     qc.barrier()
@@ -82,8 +102,15 @@ def generate_qec_circuit(n_exchanged_pairs, flipped_qubit=None):
 
     qc.barrier()
 
+    add_measurement_gates(qc, cr, sr, n_exchanged_qubits, n_pure_pairs)
+
+    qc.barrier()
+
+    correct_errors(qc, sr, n_exchanged_pairs)
+
+    qc.barrier()
+
     # Check parity of the ancilla qubits to detect bit flip errors
-    error_corrected = False
     # for i in range(n_pure_pairs):
 
     #     qc.measure(n_exchanged_qubits + 2*i, qc.clbits[2*i])
@@ -97,7 +124,7 @@ def generate_qec_circuit(n_exchanged_pairs, flipped_qubit=None):
 
     #     qc.barrier()
 
-    # qc.measure_all()
+    qc.measure_all()
     return qc   
 
 if __name__ == "__main__":
