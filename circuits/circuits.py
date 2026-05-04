@@ -109,10 +109,10 @@ def add_measurement_gates(qc, cr, sr, n_exchanged_qubits):
     Raises:
         ValueError: If the number of pairs is less than 1
     """
-    if n_exchanged_pairs < 1:
-        raise ValueError("Number of exchanged pairs must be at least 1.")
-    
-    n_pure_pairs = int(np.log2(n_exchanged_pairs))+1
+    if n_exchanged_qubits < 2:
+        raise ValueError("Number of exchanged qubits must be at least 2.")
+
+    n_pure_pairs = int(np.log2(n_exchanged_qubits//2))+1
 
 
     for i in range(n_pure_pairs):
@@ -172,8 +172,9 @@ def generate_qec_circuit(n_exchanged_pairs, flipped_qubit=None):
     qr = QuantumRegister(n_total_qubits, name='q')
     cr = ClassicalRegister(n_aux_classical, name='c')
     sr = ClassicalRegister(syndrome_bits, name='s')
+    mr = ClassicalRegister(n_exchanged_qubits, name='m')
 
-    qc = QuantumCircuit(qr, cr, sr)
+    qc = QuantumCircuit(qr, cr, sr, mr)
     
     # Create pure bell pairs
     qc.barrier()
@@ -191,7 +192,7 @@ def generate_qec_circuit(n_exchanged_pairs, flipped_qubit=None):
 
     qc.barrier()
 
-    add_measurement_gates(qc, cr, sr, n_exchanged_qubits, n_pure_pairs)
+    add_measurement_gates(qc, cr, sr, n_exchanged_qubits)
 
     qc.barrier()
 
@@ -199,7 +200,7 @@ def generate_qec_circuit(n_exchanged_pairs, flipped_qubit=None):
 
     qc.barrier()
 
-    qc.measure_all()
+    qc.measure(list(range(n_exchanged_qubits)), mr)
     return qc   
 
 if __name__ == "__main__":
